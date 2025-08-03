@@ -7,7 +7,7 @@ export default function Home() {
       <div className="w-full max-w-5xl space-y-12">
         <header className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl lg:text-6xl font-headline">
-            BMI Snapshot
+            HealthCheckApp
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Get an instant analysis of your Body Mass Index. Our AI-powered tool provides a personalized interpretation of your results.

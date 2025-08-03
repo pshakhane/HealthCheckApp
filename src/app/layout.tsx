@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'BMI Snapshot',
+  title: 'HealthCheckApp',
   description: 'An app to calculate and interpret your Body Mass Index.',
 };
 
