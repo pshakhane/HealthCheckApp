@@ -12,6 +12,9 @@ export default function Home() {
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Get an instant analysis of your Body Mass Index. Our AI-powered tool provides a personalized interpretation of your results.
           </p>
+          <p className="mt-2 text-md text-muted-foreground max-w-2xl mx-auto">
+            Keep your weight within the normal range by balancing the eating practices from dietitians with physical activity.
+          </p>
         </header>
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-5">
           <div className="lg:col-span-3">
