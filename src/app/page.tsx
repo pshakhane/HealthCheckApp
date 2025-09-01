@@ -1,5 +1,6 @@
 import { BmiCalculator } from '@/components/bmi-calculator';
 import { BmiTable } from '@/components/bmi-table';
+import { DonateButton } from '@/components/donate-button';
 
 export default function Home() {
   return (
@@ -20,8 +21,9 @@ export default function Home() {
           <div className="lg:col-span-3">
             <BmiCalculator />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-8">
             <BmiTable />
+            <DonateButton />
           </div>
         </div>
       </div>
