@@ -1,0 +1,21 @@
+{
+  "name": "HealthCheckApp",
+  "short_name": "HealthCheck",
+  "description": "An app to calculate and interpret your Body Mass Index.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
