@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
+import { NotificationPermissionManager } from '@/components/notification-permission-manager';
+
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -53,6 +55,7 @@ export default function Home() {
 
         {user ? (
           <>
+             <NotificationPermissionManager />
             <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-5">
               <div className="lg:col-span-3">
                 <BmiCalculator />

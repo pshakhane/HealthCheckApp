@@ -1,0 +1,21 @@
+diff --git a/node_modules/react-day-picker/package.json b/node_modules/react-day-picker/package.json
+index 5158148..91b72e5 100644
+--- a/node_modules/react-day-picker/package.json
++++ b/node_modules/react-day-picker/package.json
+@@ -95,7 +95,7 @@
+     "eslint-plugin-testing-library": "6.2.2",
+     "postcss": "8.4.38",
+     "prettier": "3.3.0",
+-    "react": "18.3.1",
++    "react": "19.2.1",
+     "react-dom": "18.3.1",
+     "rollup": "4.18.0",
+     "rollup-plugin-dts": "6.1.1",
+@@ -113,6 +113,6 @@
+     "@types/react": ">=18.0.0"
+   },
+   "peerDependencies": {
+-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
++    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+   }
+ }
