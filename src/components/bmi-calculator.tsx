@@ -6,6 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { interpretBmi } from '@/ai/flows/interpret-bmi';
 import type { InterpretBmiOutput } from '@/ai/flows/interpret-bmi';
+import { useFirebase } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,6 +35,7 @@ export function BmiCalculator() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const { user, firestore } = useFirebase();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +55,21 @@ export function BmiCalculator() {
 
       const interpretation = await interpretBmi({ bmi });
       
-      setResult({ ...interpretation, bmi });
+      const newResult = { ...interpretation, bmi };
+      setResult(newResult);
+
+      if (user && firestore) {
+        const bmiRecord = {
+          userId: user.uid,
+          heightCm: values.height,
+          weightKg: values.weight,
+          bmi: newResult.bmi,
+          category: newResult.category,
+          timestamp: serverTimestamp(),
+        };
+        const recordsRef = collection(firestore, 'users', user.uid, 'bmiRecords');
+        addDocumentNonBlocking(recordsRef, bmiRecord);
+      }
       
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
