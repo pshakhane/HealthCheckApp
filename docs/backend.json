@@ -1,0 +1,187 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the BMI Snapshot application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name or full name."
+        },
+        "profilePictureURL": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "BmiRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BmiRecord",
+      "type": "object",
+      "description": "Represents a single BMI record for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BMI record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User. (Relationship: User 1:N BmiRecord)"
+        },
+        "heightCm": {
+          "type": "number",
+          "description": "Height in centimeters."
+        },
+        "weightKg": {
+          "type": "number",
+          "description": "Weight in kilograms."
+        },
+        "bmi": {
+          "type": "number",
+          "description": "Calculated BMI value."
+        },
+        "category": {
+          "type": "string",
+          "description": "BMI category (Underweight, Normal, Overweight, Obese)."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the BMI was recorded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "heightCm",
+        "weightKg",
+        "bmi",
+        "category",
+        "timestamp"
+      ]
+    },
+    "CloudMessagingToken": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CloudMessagingToken",
+      "type": "object",
+      "description": "Stores the cloud messaging token for a specific user and device.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the token entry."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User. (Relationship: User 1:N CloudMessagingToken)"
+        },
+        "token": {
+          "type": "string",
+          "description": "The Firebase Cloud Messaging token."
+        },
+        "deviceInfo": {
+          "type": "string",
+          "description": "Information about the device the token belongs to (e.g., device model, OS version)."
+        },
+        "lastRefreshed": {
+          "type": "string",
+          "description": "Timestamp indicating the last time the token was refreshed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "token"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Only the authenticated user can read/write their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bmiRecords/{bmiRecordId}",
+        "definition": {
+          "entityName": "BmiRecord",
+          "schema": {
+            "$ref": "#/backend/entities/BmiRecord"
+          },
+          "description": "Stores BMI records for a specific user. Path-based rules ensure only the authenticated user can access their BMI records.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "bmiRecordId",
+              "description": "The unique identifier of the BMI record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/cloudMessagingTokens/{cloudMessagingTokenId}",
+        "definition": {
+          "entityName": "CloudMessagingToken",
+          "schema": {
+            "$ref": "#/backend/entities/CloudMessagingToken"
+          },
+          "description": "Stores cloud messaging tokens for each user. Path-based rules ensure only the authenticated user can access their tokens.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "cloudMessagingTokenId",
+              "description": "The unique identifier of the cloud messaging token."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure data isolation and facilitate secure access based on user authentication. Each user has a dedicated space for their data, ensuring privacy and simplifying security rules. The structure leverages path-based ownership for `BmiRecord` and `CloudMessagingToken` entities, associating them directly with a specific user. This approach eliminates the need for complex authorization logic or `get()` calls in security rules, adhering to the principle of Authorization Independence.\n\nThe structure is as follows:\n\n*   `/users/{userId}`: Stores user profiles. Security rules will ensure that only the authenticated user (or an admin role, if implemented) can read/write their own profile.\n*   `/users/{userId}/bmiRecords/{bmiRecordId}`: Stores BMI records for a specific user. Path-based rules ensure only the authenticated user can access their BMI records.\n*   `/users/{userId}/cloudMessagingTokens/{cloudMessagingTokenId}`: Stores cloud messaging tokens for each user.  Path-based rules ensure only the authenticated user can access their tokens. This allows sending push notifications. Segregating by user ensures QAPs are met.\n\nThis design supports the core features of the application, including height/weight input, BMI calculation, BMI display, category determination, and a BMI table, by providing a clear and organized data structure. The segregation of user-specific data into individual paths and the use of path-based ownership for rules ensures both clarity of intent and QAPs (rules are not filters)."
+  }
+}

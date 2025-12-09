@@ -1,0 +1,140 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All application data, including user profiles, 
+ * BMI records, and cloud messaging tokens, is isolated within a user-specific data tree. A user can only access
+ * documents that belong to them, ensuring a high degree of privacy and security.
+ *
+ * Data Structure: The entire data model is hierarchical, starting with the `/users/{userId}` path. All related data, 
+ * such as `bmiRecords` and `cloudMessagingTokens`, are stored in subcollections under this path. This structure
+ * simplifies authorization by using the document path itself as a primary security mechanism.
+ *
+ * Key Security Decisions:
+ * - User data is strictly private. There is no mechanism for one user to view another user's data.
+ * - To prevent data scraping and user enumeration, listing documents from the top-level `/users` collection is explicitly disallowed.
+ * - All write operations (`create`, `update`, `delete`) require that the user is authenticated.
+ * - Relational integrity is enforced: Documents created within a user's tree (e.g., a BMI record) must contain a `userId` field that correctly
+ *   references the parent user document, preventing data from being misplaced or mis-associated.
+ *
+ * Denormalization for Authorization: The data structure inherently supports simple and performant rules. By nesting all user-specific data
+ * under `/users/{userId}`, we can use the `userId` wildcard from the path for authorization decisions. This completely avoids slow
+ * and costly `get()` or `exists()` calls to other documents, as ownership is determined by the path itself.
+ *
+ * Structural Segregation: The design uses structural segregation at the highest level by partitioning all data under a specific user ID.
+ * This is a highly secure and scalable pattern for user-centric applications.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the currently signed-in user's UID matches the provided userId.
+     * This is the fundamental check for document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the user is the owner AND the document already exists.
+     * Used for safe update and delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates the integrity of a new user profile document on creation.
+     * Ensures the document's internal `id` matches its path ID.
+     */
+    function hasValidUserCreateData(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Validates the integrity of a user profile document on update.
+     * Ensures the document's internal `id` is immutable.
+     */
+    function hasValidUserUpdateData() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates the integrity of a new child document (e.g., BmiRecord, CloudMessagingToken).
+     * Ensures the document's internal `userId` matches its path ID.
+     */
+    function hasValidChildCreateData(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Validates the integrity of a child document on update.
+     * Ensures the document's internal `userId` is immutable.
+     */
+    function hasValidChildUpdateData() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (get, update, delete) A signed-in user with UID 'user_abc' can access their own document at `/users/user_abc`.
+     * @allow (create) A new user with UID 'user_abc' can create their own profile document at `/users/user_abc`.
+     * @deny (list) No user can list all documents in the `/users` collection.
+     * @deny (get) A user with UID 'user_xyz' cannot access the document at `/users/user_abc`.
+     * @principle Restricts access to a user's own profile and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && hasValidUserCreateData(userId);
+      allow update: if isExistingOwner(userId) && hasValidUserUpdateData();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages a user's private collection of BMI records.
+     * @path /users/{userId}/bmiRecords/{bmiRecordId}
+     * @allow (get, list, create, update, delete) A user with UID 'user_abc' can perform any operation on documents within `/users/user_abc/bmiRecords`.
+     * @deny (get) A user with UID 'user_xyz' cannot read a BMI record from `/users/user_abc/bmiRecords/{bmiRecordId}`.
+     * @deny (create) A user with UID 'user_xyz' cannot create a BMI record in `/users/user_abc/bmiRecords`.
+     * @principle Enforces path-based ownership, ensuring a user can only manage their own subcollection of data.
+     */
+    match /users/{userId}/bmiRecords/{bmiRecordId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && hasValidChildCreateData(userId);
+      allow update: if isExistingOwner(userId) && hasValidChildUpdateData();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages a user's private collection of cloud messaging tokens.
+     * @path /users/{userId}/cloudMessagingTokens/{cloudMessagingTokenId}
+     * @allow (get, list, create, update, delete) A user with UID 'user_abc' can manage their own device tokens at `/users/user_abc/cloudMessagingTokens`.
+     * @deny (get) A user with UID 'user_xyz' cannot read a token from `/users/user_abc/cloudMessagingTokens/{tokenId}`.
+     * @deny (create) A user with UID 'user_xyz' cannot create a token in `/users/user_abc/cloudMessagingTokens`.
+     * @principle Enforces path-based ownership, ensuring a user can only manage their own device tokens.
+     */
+    match /users/{userId}/cloudMessagingTokens/{cloudMessagingTokenId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && hasValidChildCreateData(userId);
+      allow update: if isExistingOwner(userId) && hasValidChildUpdateData();
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
