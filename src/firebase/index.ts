@@ -5,6 +5,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getMessaging, Messaging } from 'firebase/messaging';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
@@ -43,6 +44,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp),
     messaging: isBrowser() ? getMessaging(firebaseApp) : ({} as Messaging),
+    storage: getStorage(firebaseApp),
   };
 }
 
